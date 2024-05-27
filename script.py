@@ -14,7 +14,6 @@ intents.presences = False
 intents.message_content = True  # Activer l'intention "Privileged Message Content"
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} est prêt !')
@@ -78,6 +77,11 @@ async def dé(ctx):
     await ctx.send(embed=embed)
 
 @bot.command()
+async def coinflip(ctx):
+    possibilities = ['Pile', 'Face']
+    await ctx.send(f"*Le bot lance une pièce*... C'est {random.choice(possibilities)} !")
+
+@bot.command()
 async def chuck_norris(ctx):
     """Commande pour afficher une citation aléatoire de Chuck Norris"""
     response = requests.get('https://api.chucknorris.io/jokes/random')
@@ -91,6 +95,11 @@ async def chuck_norris(ctx):
     else:
         error_message = data['message']
         await ctx.send(f'Erreur : {error_message}')
+@bot.command()
+async def meme(ctx):
+    content = requests.get("https://meme-api.com/gimme").json()
+    meme = content["url"]
+    await ctx.send(meme)
 
 @bot.command()
 async def translate(ctx, *, message: str):
@@ -110,5 +119,5 @@ async def translate_message(ctx, to_lang: str):
         await ctx.send(f"Traduction {detect(message_à_traduire.content)} en {to_lang} : {traduction.translate(message_à_traduire.content)}")
     else:
         await ctx.send("Vous devez répondre à un message pour utiliser cette commande.")
-    
+
 bot.run(TOKEN)
