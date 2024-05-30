@@ -117,6 +117,30 @@ async def weather(ctx, *, city: str):
     else:
         error_message = data['message']
         await ctx.send(f'Erreur : {error_message}')
+        
+@bot.command()
+async def poll(ctx, question, *options):
+    """Crée un sondage avec des réactions en émoji pour voter."""
+    if len(options) < 2:
+        await ctx.send("Vous devez fournir au moins deux options de vote.")
+        return
+
+    # Créer l'embed
+    embed = discord.Embed(title=question, color=discord.Color.blue())
+    for emoji, option in zip(["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"], options):
+        embed.add_field(name=emoji, value=option, inline=False)
+
+    # Envoyer le message de sondage
+    poll_message = await ctx.send(embed=embed)
+
+    # Ajouter les réactions en émoji
+    for emoji in ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"][:len(options)]:
+        await poll_message.add_reaction(emoji)
+
+    # Envoyer les instructions de vote
+    instructions = "Réagissez avec les émojis correspondants pour voter !"
+    await ctx.send(instructions)
+
 @bot.command()
 async def spin(ctx):
     emojis = ["🍒", "🍋", "🍊", "🍇", "🍓", "🍍"]
