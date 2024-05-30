@@ -20,6 +20,11 @@ Le code commence par importer les modules nécessaires :
 ## Configuration du bot
 
 Le code configure ensuite les intentions du bot Discord, en activant notamment l'intention "Privileged Message Content" pour pouvoir accéder au contenu des messages.
+## Event 
+
+- ### `Content_link`
+
+Cette fonctionnalité permet de déplacer automatiquement les messages contenant des liens vers des canaux spécifiques en fonction du type de lien, tout en mentionnant l'auteur du message d'origine. Cela peut être utile pour organiser et modérer les liens partagés sur un serveur Discord
 
 ## Commandes
 
