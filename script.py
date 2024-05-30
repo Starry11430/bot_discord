@@ -8,11 +8,37 @@ from config import TOKEN,API_TOKEN
 from translate import Translator
 from langdetect import detect
 import re
+import json
+import os
+import time
+
+WIN_STREAK_DE_FILE = "./data/winstreak_de.json"
+WIN_STREAK_CASINO_FILE = "./data/winstreak_casino.json"
+
+if os.path.exists(WIN_STREAK_DE_FILE):
+    with open(WIN_STREAK_DE_FILE, "r") as f:
+        win_streaks_de = json.load(f)
+else:
+    win_streaks_de = {"user":[]}
+
+if os.path.exists(WIN_STREAK_CASINO_FILE):
+    with open(WIN_STREAK_CASINO_FILE, "r") as f:
+        win_streaks_casino = json.load(f)
+else:
+    win_streaks_casino = {"user":[]}  
+
+def save_win_streaks_de():
+    with open(WIN_STREAK_DE_FILE, "w") as f:
+        json.dump(win_streaks_de, f)
+
+def save_win_streaks_de():
+    with open(WIN_STREAK_CASINO_FILE, "w") as f:
+        json.dump(win_streaks_casino, f)
 
 intents = discord.Intents.default()
 intents.typing = False
 intents.presences = False
-intents.message_content = True  # Activer l'intention "Privileged Message Content"
+intents.message_content = True  
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 @bot.event
@@ -31,7 +57,7 @@ async def on_message(message):
     if message.author == bot.user:
         return
     link = contains_link(message)
-    if contains_link(message):
+    if link[0] != False:
         print(link)
         match link[1]:
             case r'youtube.com\/\S*': 
@@ -40,17 +66,13 @@ async def on_message(message):
                 destination_channel = bot.get_channel(1245776170599841842)
             case r'google.com\/\S*' | r'https?://\S+':
                 destination_channel = bot.get_channel(1245771119370436708)
-
         message_content = message.content
-        print(message)
-
         try:
             await destination_channel.send(content=f"{message.author.mention} : {message_content}")
         except discord.HTTPException as e:
             print(f"Erreur lors de l'envoi du message : {e}")
-
+        
         await message.delete()
-
     await bot.process_commands(message)
 
 @bot.command()
@@ -95,21 +117,60 @@ async def weather(ctx, *, city: str):
     else:
         error_message = data['message']
         await ctx.send(f'Erreur : {error_message}')
+@bot.command()
+async def spin(ctx):
+    emojis = ["🍒", "🍋", "🍊", "🍇", "🍓", "🍍"]
+    embed = discord.Embed(title="Machine à sous")
+    reel1, reel2, reel3 = random.sample(emojis, 3)
+    embed.add_field(name="", value=f"{reel1} | {reel2} | {reel3}")
+    message = await ctx.send(embed=embed)
 
+    for _ in range(10):
+        reel1, reel2, reel3 = random.sample(emojis, 3)
+        embed.set_field_at(0, name="", value=f"{reel1} | {reel2} | {reel3}")
+        await message.edit(embed=embed)
+        time.sleep(0.5)
+
+    if reel1 == reel2 == reel3:
+        embed.set_field_at(0, name="Résultat", value="Vous avez gagné !")
+    elif reel1 == reel2 or reel2 == reel3 or reel3 == reel1:
+        embed.set_field_at(0, name="Résultat", value="Double !!!")
+    else:
+        embed.set_field_at(0, name="Résultat", value="Vous avez perdu.")
+
+    await message.edit(embed=embed)
 @bot.command()
 async def dé(ctx):
     """Jeu de dé, faites un paire est c'est gagner !!!"""
     faces = ["⚀","⚁","⚂","⚃","⚄","⚅"]
-    dé_1 = random.randint(0,5)
-    dé_2 = random.randint(0,5)
+    dé_1 = random.randint(0,len(faces))
+    dé_2 = random.randint(0,len(faces))
     if dé_1 == dé_2:
         embed = discord.Embed(title=f'Jeux de dé 🎲', color=0x00ff00)
         embed.add_field(name="Pair", value=f"{faces[dé_1]} = {faces[dé_2]}")
+        if len(win_streaks_de['user']) == 0:
+            tab_win = {
+                    'id':ctx.author.id,
+                    'win':1
+                }
+            win_streaks_de['user'].append(tab_win)
+        else:
+            for user in win_streaks_de['user']:
+                if user['id'] != ctx.author.id:
+                    tab_win = {
+                        'id':ctx.author.id,
+                        'win':1
+                    }
+                    win_streaks_de['user'].append(tab_win)
+                elif user['id'] == ctx.author.id:
+                    user['win'] += 1 
+                    break
     else:
         embed = discord.Embed(title=f'Jeux de dé 🎲', color=0xffff00)
         embed.add_field(name='Dé numéro 1:', value=f"**{faces[dé_1]}**", inline=True)
         embed.add_field(name='Dé numéro 2:', value=f"**{faces[dé_2]}**", inline=True) 
     await ctx.send(embed=embed)
+    bot.loop.call_soon(save_win_streaks_de)
 
 @bot.command()
 async def coinflip(ctx):
