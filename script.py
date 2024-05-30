@@ -7,6 +7,7 @@ import random
 from config import TOKEN,API_TOKEN
 from translate import Translator
 from langdetect import detect
+import re
 
 intents = discord.Intents.default()
 intents.typing = False
@@ -17,6 +18,40 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} est prêt !')
+
+def contains_link(message):
+    link_patterns = [r'youtube.com\/\S*',r'x.com\/\S*',r'facebook.com\/\S*',r'google.com\/\S*',r'https?://\S+']
+    for pattern in link_patterns:
+        if re.search(pattern, message.content):
+            return True, pattern
+    return False, None
+
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
+    link = contains_link(message)
+    if contains_link(message):
+        print(link)
+        match link[1]:
+            case r'youtube.com\/\S*': 
+                destination_channel = bot.get_channel(1245776198907330651)
+            case r'x.com\/\S*' | r'facebook.com\/\S*':
+                destination_channel = bot.get_channel(1245776170599841842)
+            case r'google.com\/\S*' | r'https?://\S+':
+                destination_channel = bot.get_channel(1245771119370436708)
+
+        message_content = message.content
+        print(message)
+
+        try:
+            await destination_channel.send(content=f"{message.author.mention} : {message_content}")
+        except discord.HTTPException as e:
+            print(f"Erreur lors de l'envoi du message : {e}")
+
+        await message.delete()
+
+    await bot.process_commands(message)
 
 @bot.command()
 async def img2pdf(ctx):
